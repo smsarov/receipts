@@ -1,0 +1,60 @@
+{
+  "dataset": "cdek-ocr/receipt-ocr-ru",
+  "splits": {
+    "train": {
+      "jsonl_rows": 700,
+      "unique_images": 699,
+      "duplicate_rows": 1,
+      "records_with_items": 561,
+      "records_without_items": 138,
+      "item_count": 1985,
+      "available_referenced_images": 699,
+      "missing_referenced_images": 0
+    },
+    "validation": {
+      "jsonl_rows": 150,
+      "unique_images": 149,
+      "duplicate_rows": 1,
+      "records_with_items": 119,
+      "records_without_items": 30,
+      "item_count": 391,
+      "available_referenced_images": 74,
+      "missing_referenced_images": 75
+    },
+    "test": {
+      "jsonl_rows": 150,
+      "unique_images": 150,
+      "duplicate_rows": 0,
+      "records_with_items": 121,
+      "records_without_items": 29,
+      "item_count": 360,
+      "available_referenced_images": 150,
+      "missing_referenced_images": 0
+    }
+  },
+  "issues": {},
+  "unique_total": 998,
+  "records_with_items": 801,
+  "records_without_items": 197,
+  "item_count": 2736,
+  "items_missing_text": 0,
+  "items_missing_sum": 0,
+  "items_sum_not_indicated": 1,
+  "records_with_latin_item_text": 135,
+  "records_without_cyrillic_item_text": 3,
+  "duplicates": [
+    {
+      "image": "images/train/IMG_1083_bin.jpg",
+      "rows": 2
+    },
+    {
+      "image": "images/validation/IMG_1100_bin.jpg",
+      "rows": 2
+    }
+  ],
+  "cross_split_image_overlaps": {
+    "train/validation": [],
+    "train/test": [],
+    "validation/test": []
+  }
+}
