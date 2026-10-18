@@ -18,8 +18,8 @@
       "records_with_items": 119,
       "records_without_items": 30,
       "item_count": 391,
-      "available_referenced_images": 74,
-      "missing_referenced_images": 75
+      "available_referenced_images": 149,
+      "missing_referenced_images": 0
     },
     "test": {
       "jsonl_rows": 150,

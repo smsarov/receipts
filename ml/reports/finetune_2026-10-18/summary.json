@@ -1,0 +1,112 @@
+{
+  "training": {
+    "epochs_completed": 5,
+    "optimizer_steps": 695,
+    "best_validation_loss": 1.4900641239093801,
+    "training_seconds": 1964.1
+  },
+  "best_checkpoint": {
+    "epoch": 5,
+    "validation_loss": 1.4900641239093801,
+    "path": "models/donut-receipts/best"
+  },
+  "initial_validation_loss": 11.299043985763406,
+  "baseline_fixed_test": {
+    "receipts": 24,
+    "valid_json_rate": 0.0,
+    "receipt_exact_match": 0.0,
+    "product_names_cer": 1.0,
+    "name": {
+      "tp": 0,
+      "predicted": 0,
+      "target": 79,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "sum": {
+      "tp": 0,
+      "predicted": 0,
+      "target": 79,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "pair": {
+      "tp": 0,
+      "predicted": 0,
+      "target": 79,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "generation_max_new_tokens": 768,
+    "split": "test",
+    "original_checkpoint": true,
+    "device": "cpu"
+  },
+  "finetuned_fixed_test": {
+    "receipts": 24,
+    "valid_json_rate": 1.0,
+    "receipt_exact_match": 0.0,
+    "product_names_cer": 0.9399666481378544,
+    "name": {
+      "tp": 1,
+      "predicted": 54,
+      "target": 79,
+      "precision": 0.018518518518518517,
+      "recall": 0.012658227848101266,
+      "f1": 0.015037593984962407
+    },
+    "sum": {
+      "tp": 31,
+      "predicted": 54,
+      "target": 79,
+      "precision": 0.5740740740740741,
+      "recall": 0.3924050632911392,
+      "f1": 0.4661654135338346
+    },
+    "pair": {
+      "tp": 1,
+      "predicted": 54,
+      "target": 79,
+      "precision": 0.018518518518518517,
+      "recall": 0.012658227848101266,
+      "f1": 0.015037593984962407
+    }
+  },
+  "finetuned_full_test": {
+    "receipts": 121,
+    "valid_json_rate": 0.9669421487603306,
+    "receipt_exact_match": 0.03305785123966942,
+    "product_names_cer": 0.9011594535644587,
+    "name": {
+      "tp": 5,
+      "predicted": 240,
+      "target": 360,
+      "precision": 0.020833333333333332,
+      "recall": 0.013888888888888888,
+      "f1": 0.016666666666666666
+    },
+    "sum": {
+      "tp": 156,
+      "predicted": 240,
+      "target": 360,
+      "precision": 0.65,
+      "recall": 0.43333333333333335,
+      "f1": 0.5199999999999999
+    },
+    "pair": {
+      "tp": 5,
+      "predicted": 240,
+      "target": 360,
+      "precision": 0.020833333333333332,
+      "recall": 0.013888888888888888,
+      "f1": 0.016666666666666666
+    },
+    "generation_max_new_tokens": 768,
+    "split": "test",
+    "original_checkpoint": false,
+    "device": "mps"
+  }
+}

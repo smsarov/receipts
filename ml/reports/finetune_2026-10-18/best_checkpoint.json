@@ -1,0 +1,5 @@
+{
+  "epoch": 5,
+  "validation_loss": 1.4900641239093801,
+  "path": "models/donut-receipts/best"
+}

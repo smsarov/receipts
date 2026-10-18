@@ -1,0 +1,6 @@
+{
+  "epochs_completed": 5,
+  "optimizer_steps": 695,
+  "best_validation_loss": 1.4900641239093801,
+  "training_seconds": 1964.1
+}

@@ -1,0 +1,28 @@
+{
+  "splits": {
+    "train": {
+      "raw_rows": 700,
+      "empty_items": 138,
+      "invalid_item": 5,
+      "duplicate_reference": 1,
+      "prepared": 555,
+      "prepared_sha256": "21147f378b90fbdafedbc81acde345321cd0f2cd66ac8517f069fd00f6e4c6bd"
+    },
+    "validation": {
+      "raw_rows": 150,
+      "invalid_item": 1,
+      "empty_items": 30,
+      "duplicate_reference": 1,
+      "prepared": 118,
+      "prepared_sha256": "2a385748e3f5eee1f91072cd5d72e934add3210a84a629838e80712bde3edc37"
+    },
+    "test": {
+      "raw_rows": 150,
+      "empty_items": 29,
+      "prepared": 121,
+      "prepared_sha256": "66a62912add4941610497c1bf26e165f73473df6db29caf3eca1e710ebdd57ad"
+    }
+  },
+  "cross_split_pixel_duplicates": 0
+}
+Saved /Users/smsarov/projects/receipts/ml/reports/data_preparation.json

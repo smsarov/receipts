@@ -1,0 +1,38 @@
+Downloading 75 missing images at 50a7383534b3fe498c49eff9e7bb35b20f300eba
+Images downloaded: 10/75
+Images downloaded: 20/75
+Images downloaded: 30/75
+Images downloaded: 40/75
+Images downloaded: 50/75
+Images downloaded: 60/75
+Images downloaded: 70/75
+Images downloaded: 75/75
+{
+  "splits": {
+    "train": {
+      "raw_rows": 700,
+      "empty_items": 138,
+      "invalid_item": 14,
+      "duplicate_reference": 1,
+      "prepared": 546,
+      "prepared_sha256": "f41b319d6b72debe3867fb52d1e7b3c0f81025f3a12d52b360b667bb1e63b4ee"
+    },
+    "validation": {
+      "raw_rows": 150,
+      "invalid_item": 4,
+      "empty_items": 30,
+      "duplicate_reference": 1,
+      "prepared": 115,
+      "prepared_sha256": "4afe60a9db11ffdcd2d6a15419976a0ff2d139129a290d621b444b018f265847"
+    },
+    "test": {
+      "raw_rows": 150,
+      "empty_items": 29,
+      "invalid_item": 2,
+      "prepared": 119,
+      "prepared_sha256": "d38417ac9163f20f95f7244776c4278009fff0d82c7c9ccf4d4b4ef0cf43c268"
+    }
+  },
+  "cross_split_pixel_duplicates": 0
+}
+Saved /Users/smsarov/projects/receipts/ml/reports/data_preparation.json

@@ -1,0 +1,34 @@
+{
+  "receipts": 24,
+  "valid_json_rate": 0.0,
+  "receipt_exact_match": 0.0,
+  "product_names_cer": 1.0,
+  "name": {
+    "tp": 0,
+    "predicted": 0,
+    "target": 79,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "sum": {
+    "tp": 0,
+    "predicted": 0,
+    "target": 79,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "pair": {
+    "tp": 0,
+    "predicted": 0,
+    "target": 79,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "generation_max_new_tokens": 768,
+  "split": "test",
+  "original_checkpoint": true,
+  "device": "cpu"
+}

@@ -1,0 +1,14 @@
+{
+  "git_head": "fbb9b41ad78f74cbce783102b6c3c6d64dac7394",
+  "files": {
+    "ml/scripts/finetune_receipts.py": "b7ce4e2208ab4a6a97101471973946c352ca4b1cc430ac2697bd98726f3dd21f",
+    "ml/scripts/inspect_receipt_dataset.py": "3d3f3b0e1d79a943ececb5ee2a3f0b57ddeb3a6d3f6f528dd503038c713f1ecf",
+    "ml/scripts/predict_receipt.py": "c6f2c6bb84a2230a158c1fb88b33151b626cd9aec6c485a08ae83730c748778b",
+    "ml/scripts/prepare_receipts.py": "0d91ea4572d51f04b1ac0cf1a21c847cfb52d5e609d58ede7cd9cc9e3955b784",
+    "ml/scripts/receipt_common.py": "d4940b36a1c4fbc3c00777a7c66756e6c46670a4dbacc517073cfd24b6623e05",
+    "ml/scripts/run_donut_base.py": "fa24c8a4321d717cf88c95a57e59cd5f7d0d28f018ae073a9781633ca164ac2f",
+    "ml/scripts/summarize_receipts.py": "a850cafe0f551511710b1d83cd1f6d9880ac83ed5dd7d60f5a7563baf26497b6",
+    "ml/scripts/verify_receipt_checkpoint.py": "64c6c7f2199588e9872d3d2318b2eb2847c90f9d461efcfe8341030c520e3c2f",
+    "ml/requirements.txt": "219f6ec0a24a2750e1adfcd085dabd47d51c914329be3452b80efc07a3fd9ff7"
+  }
+}

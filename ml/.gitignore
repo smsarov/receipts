@@ -1,3 +1,7 @@
 /data/raw/
+/data/processed/
+/data/features/
 /models/donut-base/
+/models/donut-receipts/
+__pycache__/
 /.venv/

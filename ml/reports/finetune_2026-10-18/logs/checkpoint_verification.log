@@ -1,0 +1,12 @@
+{
+  "original_weight_sha256": "749f6e487d0cdbd7362d8b6a909174b93506d8631da0d15a6108bb6512ad5f48",
+  "original_weights_unchanged": true,
+  "encoder_tensors_compared": 373,
+  "encoder_identical": true,
+  "decoder_mean_absolute_weight_changes": {
+    "decoder.model.decoder.layers.0.self_attn.q_proj.weight": 0.0008922832785174251,
+    "decoder.model.decoder.embed_tokens.weight": 0.0018318224465474486
+  },
+  "original_token_ids_preserved": true,
+  "processor_geometry_verified": true
+}

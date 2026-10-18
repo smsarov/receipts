@@ -1,0 +1,30 @@
+{
+  "receipts": 24,
+  "valid_json_rate": 1.0,
+  "receipt_exact_match": 0.0,
+  "product_names_cer": 0.9399666481378544,
+  "name": {
+    "tp": 1,
+    "predicted": 54,
+    "target": 79,
+    "precision": 0.018518518518518517,
+    "recall": 0.012658227848101266,
+    "f1": 0.015037593984962407
+  },
+  "sum": {
+    "tp": 31,
+    "predicted": 54,
+    "target": 79,
+    "precision": 0.5740740740740741,
+    "recall": 0.3924050632911392,
+    "f1": 0.4661654135338346
+  },
+  "pair": {
+    "tp": 1,
+    "predicted": 54,
+    "target": 79,
+    "precision": 0.018518518518518517,
+    "recall": 0.012658227848101266,
+    "f1": 0.015037593984962407
+  }
+}
