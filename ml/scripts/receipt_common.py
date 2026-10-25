@@ -52,10 +52,10 @@ def load_receipt_processor(path: Path) -> DonutProcessor:
                           tokenizer=AutoTokenizer.from_pretrained(str(path), use_fast=True))
 
 
-def receipt_processor() -> tuple[DonutProcessor, dict]:
+def receipt_processor(prepared_dir: Path = PREPARED) -> tuple[DonutProcessor, dict]:
     processor = base_processor()
     tokenizer = processor.tokenizer
-    train = read_jsonl(PREPARED / "train.jsonl")
+    train = read_jsonl(prepared_dir / "train.jsonl")
     texts = [row["target_text"] for row in train]
     before_unknown = sum(tokenizer(text, add_special_tokens=False).input_ids.count(tokenizer.unk_token_id)
                          for text in texts)
@@ -80,7 +80,7 @@ def receipt_processor() -> tuple[DonutProcessor, dict]:
     lengths = {}
     after_unknown = 0
     for split in ("train", "validation", "test"):
-        rows = read_jsonl(PREPARED / f"{split}.jsonl")
+        rows = read_jsonl(prepared_dir / f"{split}.jsonl")
         split_lengths = []
         split_unknown = 0
         for row in rows:
@@ -127,17 +127,32 @@ def normalize_sum(value: str) -> str:
         return "!invalid"
 
 
+def normalize_quantity(value: str) -> str:
+    value = unicodedata.normalize("NFKC", str(value)).casefold().replace(" ", "")
+    try:
+        number = Decimal(value.replace(",", "."))
+        if number.is_finite():
+            return format(number.normalize(), "f")
+    except InvalidOperation:
+        pass
+    return value
+
+
 def parse_prediction(text: str) -> tuple[list[dict], bool]:
     try:
         data = json.loads(text.strip())
         if not isinstance(data, dict) or set(data) != {"items"} or not isinstance(data["items"], list):
             return [], False
         for item in data["items"]:
-            if not isinstance(item, dict) or set(item) != {"name", "sum"}:
+            if not isinstance(item, dict) or set(item) not in ({"name", "sum"}, {"name", "quantity", "price", "sum"}):
                 return [], False
             if not isinstance(item["name"], str) or not item["name"].strip():
                 return [], False
             if not isinstance(item["sum"], str) or normalize_sum(item["sum"]) == "!invalid":
+                return [], False
+            if "quantity" in item and (not isinstance(item["quantity"], str) or not item["quantity"].strip()):
+                return [], False
+            if "price" in item and (not isinstance(item["price"], str) or normalize_sum(item["price"]) == "!invalid"):
                 return [], False
         return data["items"], True
     except (ValueError, TypeError):
@@ -155,7 +170,10 @@ def edit_distance(left: str, right: str) -> int:
 
 
 def score_predictions(rows: list[dict]) -> dict:
-    totals = {kind: Counter() for kind in ("name", "sum", "pair")}
+    kinds = ["name", "sum", "pair"]
+    if rows and rows[0]["target"]["items"] and "quantity" in rows[0]["target"]["items"][0]:
+        kinds.extend(("quantity", "price"))
+    totals = {kind: Counter() for kind in kinds}
     valid = exact = edits = characters = 0
     for row in rows:
         predicted = row["predicted_items"]
@@ -163,7 +181,15 @@ def score_predictions(rows: list[dict]) -> dict:
         valid += int(row["valid_json"])
         def key(item: dict, kind: str):
             name, amount = normalize_name(item["name"]), normalize_sum(item["sum"])
-            return name if kind == "name" else amount if kind == "sum" else (name, amount)
+            if kind == "name":
+                return name
+            if kind == "sum":
+                return amount
+            if kind == "pair":
+                return name, amount
+            if kind == "price":
+                return normalize_sum(item["price"])
+            return normalize_quantity(item["quantity"])
         for kind in totals:
             expected = Counter(key(item, kind) for item in target)
             actual = Counter(key(item, kind) for item in predicted)

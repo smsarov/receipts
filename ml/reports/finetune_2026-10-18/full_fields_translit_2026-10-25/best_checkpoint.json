@@ -1,0 +1,5 @@
+{
+  "epoch": 5,
+  "validation_loss": 0.7351445009406117,
+  "path": "models/donut-receipts/full_fields_translit_2026-10-25/best"
+}

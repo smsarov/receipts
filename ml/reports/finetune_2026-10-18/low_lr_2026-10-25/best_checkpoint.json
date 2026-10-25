@@ -1,0 +1,5 @@
+{
+  "epoch": 2,
+  "validation_loss": 1.410642368311539,
+  "path": "models/donut-receipts/low_lr_2026-10-25/best"
+}

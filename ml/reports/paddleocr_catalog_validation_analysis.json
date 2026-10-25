@@ -1,0 +1,50 @@
+{
+  "receipts": 115,
+  "target_items": 379,
+  "train_catalog_unique_names": 1037,
+  "catalog_exact_name_matches": {
+    "0.45": {
+      "true_positives": 71,
+      "predicted": 585,
+      "precision": 0.12136752136752137,
+      "recall": 0.18733509234828497
+    },
+    "0.55": {
+      "true_positives": 63,
+      "predicted": 191,
+      "precision": 0.3298429319371728,
+      "recall": 0.1662269129287599
+    },
+    "0.65": {
+      "true_positives": 47,
+      "predicted": 105,
+      "precision": 0.44761904761904764,
+      "recall": 0.12401055408970976
+    },
+    "0.75": {
+      "true_positives": 30,
+      "predicted": 61,
+      "precision": 0.4918032786885246,
+      "recall": 0.079155672823219
+    }
+  },
+  "exact_catalog_name_matched_rows": 71,
+  "numeric_recall_given_exact_catalog_name": {
+    "quantity": {
+      "hits": 31,
+      "targets": 71,
+      "recall": 0.43661971830985913
+    },
+    "price": {
+      "hits": 53,
+      "targets": 71,
+      "recall": 0.7464788732394366
+    },
+    "sum": {
+      "hits": 53,
+      "targets": 71,
+      "recall": 0.7464788732394366
+    }
+  },
+  "note": "OCR groups are classified using only OCR text and train catalog. Exact-match scoring uses validation labels; no validation labels are used to choose a catalog name."
+}

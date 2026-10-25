@@ -12,7 +12,9 @@ import math
 import os
 import platform
 import random
+import re
 import time
+from pathlib import Path
 
 from PIL import Image
 import torch
@@ -25,6 +27,10 @@ from receipt_common import (
     base_processor, device, load_base, load_receipt_processor, parse_prediction, read_jsonl,
     receipt_processor, score_predictions, write_json,
 )
+
+RU_TO_LATIN = dict(zip("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ", (
+    "A", "B", "V", "G", "D", "E", "E", "ZH", "Z", "I", "Y", "K", "L", "M", "N",
+    "O", "P", "R", "S", "T", "U", "F", "H", "C", "CH", "SH", "SCH", "", "Y", "", "E", "YU", "YA")))
 
 
 def log(message: str) -> None:
@@ -90,7 +96,7 @@ def targets(rows: list[dict], tokenizer, max_tokens: int) -> tuple[list[dict], l
     return usable, excluded
 
 
-def loss_for(model, row: dict, target_device: torch.device):
+def loss_for(model, row: dict, target_device: torch.device, processor=None, train_encoder: bool = False):
     sequence = torch.tensor(row["token_ids"], dtype=torch.long, device=target_device)
     count = sequence.numel() - 1
     padded_length = math.ceil(count / 64) * 64
@@ -100,18 +106,23 @@ def loss_for(model, row: dict, target_device: torch.device):
     inputs[0, :count] = sequence[:-1]
     labels[0, :count] = sequence[1:]
     attention[0, :count] = 1
-    hidden = load_features(row, target_device)
-    logits = model(input_ids=inputs, attention_mask=attention, encoder_hidden_states=hidden, use_cache=False).logits
+    if train_encoder:
+        with Image.open(RAW / row["image"]) as source:
+            pixels = processor(source.convert("RGB"), return_tensors="pt").pixel_values.to(target_device)
+        hidden = model.encoder(pixels).last_hidden_state
+    else:
+        hidden = load_features(row, target_device)
+    logits = model.decoder(input_ids=inputs, attention_mask=attention, encoder_hidden_states=hidden, use_cache=False).logits
     # Explicit one-token shift: predict the first JSON token from the task prefix.
     return F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1)), count
 
 
-def validation_loss(model, rows: list[dict], target_device: torch.device) -> float:
+def validation_loss(model, rows: list[dict], target_device: torch.device, processor=None, train_encoder: bool = False) -> float:
     model.eval()
     total_loss = total_tokens = 0
     with torch.inference_mode():
         for row in rows:
-            loss, count = loss_for(model, row, target_device)
+            loss, count = loss_for(model, row, target_device, processor, train_encoder)
             total_loss += loss.item() * count
             total_tokens += count
     model.train()
@@ -122,10 +133,13 @@ def train(args) -> None:
     target_device = device(args.device)
     torch.manual_seed(42)
     random.seed(42)
-    RUN.mkdir(parents=True, exist_ok=True)
-    REPORTS.mkdir(parents=True, exist_ok=True)
-    processor, tokenizer_metadata = receipt_processor()
-    write_json(REPORTS / "tokenizer.json", tokenizer_metadata)
+    run_dir = RUN / args.run_name if args.run_name else RUN
+    report_dir = REPORTS / args.run_name if args.run_name else REPORTS
+    prepared_dir = Path(args.dataset_dir) if args.dataset_dir else PREPARED
+    run_dir.mkdir(parents=True, exist_ok=True)
+    report_dir.mkdir(parents=True, exist_ok=True)
+    processor, tokenizer_metadata = receipt_processor(prepared_dir)
+    write_json(report_dir / "tokenizer.json", tokenizer_metadata)
     model = load_base()
     original_size = model.decoder.get_input_embeddings().weight.shape[0]
     model.decoder.resize_token_embeddings(len(processor.tokenizer), mean_resizing=False)
@@ -139,48 +153,67 @@ def train(args) -> None:
             if processor.tokenizer.unk_token_id in source_ids:
                 source_ids = []
             source_ids = [item for item in source_ids if item < original_size]
+            if not source_ids and args.embedding_init == "transliteration" and len(token) == 1:
+                mapped = RU_TO_LATIN.get(token.upper())
+                if mapped:
+                    if token.islower():
+                        mapped = mapped.lower()
+                    source_ids = original_processor.tokenizer(mapped, add_special_tokens=False).input_ids
+                    source_ids = [item for item in source_ids
+                                  if item != original_processor.tokenizer.unk_token_id and item < original_size]
             if token == PROMPT:
                 source_ids = original_processor.tokenizer("<s_synthdog>", add_special_tokens=False).input_ids
             if source_ids:
                 embedding[index].copy_(embedding[source_ids].mean(dim=0))
+    if args.init_checkpoint:
+        from transformers import VisionEncoderDecoderModel
+        initial = VisionEncoderDecoderModel.from_pretrained(args.init_checkpoint)
+        model.decoder.load_state_dict(initial.decoder.state_dict())
+        del initial
     model.config.pad_token_id = processor.tokenizer.pad_token_id
     model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(PROMPT)
     model.generation_config.decoder_start_token_id = model.config.decoder_start_token_id
     model.generation_config.pad_token_id = model.config.pad_token_id
     model.generation_config.eos_token_id = processor.tokenizer.eos_token_id
     model.generation_config.forced_eos_token_id = None
-    model.encoder.requires_grad_(False)
-    decoder = model.decoder.to(target_device)
+    model.to(target_device)
+    model.encoder.requires_grad_(args.train_encoder)
+    decoder = model.decoder
     decoder.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-    train_rows, excluded_train = targets(read_jsonl(PREPARED / "train.jsonl"), processor.tokenizer, args.max_tokens)
-    val_rows, excluded_val = targets(read_jsonl(PREPARED / "validation.jsonl"), processor.tokenizer, args.max_tokens)
+    if args.train_encoder:
+        model.encoder.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+    train_rows, excluded_train = targets(read_jsonl(prepared_dir / "train.jsonl"), processor.tokenizer, args.max_tokens)
+    val_rows, excluded_val = targets(read_jsonl(prepared_dir / "validation.jsonl"), processor.tokenizer, args.max_tokens)
     if not train_rows or not val_rows:
         raise ValueError("Training and validation sets must both be nonempty")
     config = {"base_model": "naver-clova-ix/donut-base", "seed": 42,
               "epochs": args.epochs, "learning_rate": args.lr, "gradient_accumulation": args.accumulation,
-              "max_sequence_tokens": args.max_tokens, "image_size": IMAGE_SIZE, "encoder_frozen": True,
+              "max_sequence_tokens": args.max_tokens, "image_size": IMAGE_SIZE, "encoder_frozen": not args.train_encoder,
               "gradient_checkpointing": True,
               "loss_padding_multiple": 64, "do_align_long_axis": False,
-              "trainable_parameters": sum(parameter.numel() for parameter in decoder.parameters()),
+              "trainable_parameters": sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad),
               "train_examples": len(train_rows), "validation_examples": len(val_rows),
+              "prepared_dataset_dir": str(prepared_dir), "embedding_initialization": args.embedding_init,
               "excluded_overlength_train_ids": excluded_train, "excluded_overlength_validation_ids": excluded_val,
               "device": str(target_device), "torch": torch.__version__, "transformers": transformers.__version__,
               "python": platform.python_version(), "created_utc": datetime.now(timezone.utc).isoformat(),
               "selection": "lowest token-weighted validation cross-entropy; test never used for selection",
+              "initial_checkpoint": args.init_checkpoint,
               "preparation_sha256": hashlib.sha256((ML / "reports/data_preparation.json").read_bytes()).hexdigest()}
-    write_json(REPORTS / "config.json", config)
-    processor.save_pretrained(RUN / "processor")
-    optimizer = torch.optim.AdamW(decoder.parameters(), lr=args.lr, weight_decay=0.01, foreach=False)
+    write_json(report_dir / "config.json", config)
+    processor.save_pretrained(run_dir / "processor")
+    trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    optimizer = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=0.01, foreach=False)
     total_steps = math.ceil(len(train_rows) / args.accumulation) * args.epochs
     warmup_steps = max(1, int(total_steps * 0.05))
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer, lambda step: min((step + 1) / warmup_steps, max(0.0, (total_steps - step) / max(1, total_steps - warmup_steps))))
     best_loss = float("inf")
     start_epoch = step = 0
-    last_checkpoint = RUN / "last.pt"
+    last_checkpoint = run_dir / "last.pt"
     if args.resume and last_checkpoint.exists():
         state = torch.load(last_checkpoint, map_location="cpu", weights_only=True)
-        decoder.load_state_dict(state["decoder"])
+        model.load_state_dict(state["model"] if "model" in state else {f"decoder.{key}": value for key, value in state["decoder"].items()}, strict=False)
         optimizer.load_state_dict(state["optimizer"])
         scheduler.load_state_dict(state["scheduler"])
         for values in optimizer.state.values():
@@ -193,15 +226,15 @@ def train(args) -> None:
         if target_device.type == "mps" and state.get("mps_rng_state") is not None:
             torch.mps.set_rng_state(state["mps_rng_state"])
         log(f"Resumed after epoch {start_epoch}")
-    history_path = REPORTS / "training.jsonl"
-    baseline_val = validation_loss(decoder, val_rows, target_device)
+    history_path = report_dir / "training.jsonl"
+    baseline_val = validation_loss(model, val_rows, target_device, processor, args.train_encoder)
     log(f"Validation loss before this run: {baseline_val:.4f}; train={len(train_rows)}, validation={len(val_rows)}")
     if not args.resume:
-        write_json(REPORTS / "initial_validation.json", {"loss": baseline_val})
+        write_json(report_dir / "initial_validation.json", {"loss": baseline_val})
     started = time.perf_counter()
     with history_path.open("a" if args.resume else "w", encoding="utf-8") as history:
         for epoch in range(start_epoch, args.epochs):
-            decoder.train()
+            model.train()
             order = list(range(len(train_rows)))
             random.Random(42 + epoch).shuffle(order)
             total_loss = total_tokens = 0
@@ -209,7 +242,7 @@ def train(args) -> None:
             for position, index in enumerate(order):
                 group_start = (position // args.accumulation) * args.accumulation
                 group_size = min(args.accumulation, len(order) - group_start)
-                loss, tokens = loss_for(decoder, train_rows[index], target_device)
+                loss, tokens = loss_for(model, train_rows[index], target_device, processor, args.train_encoder)
                 value = loss.item()
                 if not math.isfinite(value):
                     raise FloatingPointError(f"Non-finite training loss at epoch {epoch+1}, example {index}")
@@ -217,7 +250,7 @@ def train(args) -> None:
                 total_loss += value * tokens
                 total_tokens += tokens
                 if (position + 1) % args.accumulation == 0 or position + 1 == len(order):
-                    norm = torch.nn.utils.clip_grad_norm_(decoder.parameters(), 1.0)
+                    norm = torch.nn.utils.clip_grad_norm_(trainable, 1.0)
                     if not torch.isfinite(norm):
                         raise FloatingPointError("Non-finite gradients")
                     optimizer.step()
@@ -233,34 +266,34 @@ def train(args) -> None:
                     log(json.dumps(event))
                     if target_device.type == "mps":
                         torch.mps.empty_cache()
-            val_loss = validation_loss(decoder, val_rows, target_device)
+            val_loss = validation_loss(model, val_rows, target_device, processor, args.train_encoder)
             is_best = val_loss < best_loss
             if is_best:
                 best_loss = val_loss
-                best_path = RUN / "best"
+                best_path = run_dir / "best"
                 # Save a standard HF checkpoint that loads without custom model code.
                 model.save_pretrained(best_path, safe_serialization=True)
                 processor.save_pretrained(best_path)
-                write_json(REPORTS / "best_checkpoint.json", {"epoch": epoch + 1, "validation_loss": val_loss,
-                                                            "path": str(best_path.relative_to(ML))})
+                write_json(report_dir / "best_checkpoint.json", {"epoch": epoch + 1, "validation_loss": val_loss,
+                                                                  "path": str(best_path.relative_to(ML))})
             event = {"epoch": epoch + 1, "train_loss": total_loss / total_tokens,
                      "validation_loss": val_loss, "best": is_best, "elapsed_seconds": round(time.perf_counter() - started, 1)}
             history.write(json.dumps(event) + "\n")
             history.flush()
             log(json.dumps(event))
-            state = {"decoder": {name: tensor.detach().cpu() for name, tensor in decoder.state_dict().items()},
+            state = {"model": {name: tensor.detach().cpu() for name, tensor in model.state_dict().items()},
                      "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
                      "epoch": epoch + 1, "step": step, "best_loss": best_loss,
                      "torch_rng_state": torch.get_rng_state(),
                      "mps_rng_state": torch.mps.get_rng_state() if target_device.type == "mps" else None}
-            temporary = RUN / "last.partial.pt"
+            temporary = run_dir / "last.partial.pt"
             torch.save(state, temporary)
             temporary.replace(last_checkpoint)
             del state
             gc.collect()
-    write_json(REPORTS / "training_complete.json", {"epochs_completed": args.epochs, "optimizer_steps": step,
-                                                  "best_validation_loss": best_loss,
-                                                  "training_seconds": round(time.perf_counter() - started, 1)})
+    write_json(report_dir / "training_complete.json", {"epochs_completed": args.epochs, "optimizer_steps": step,
+                                                        "best_validation_loss": best_loss,
+                                                        "training_seconds": round(time.perf_counter() - started, 1)})
     log("Training complete")
 
 
@@ -275,12 +308,14 @@ def evaluate(args) -> None:
         name = "baseline_fixed_test"
     else:
         from transformers import VisionEncoderDecoderModel
-        processor = load_receipt_processor(RUN / "best")
-        model = VisionEncoderDecoderModel.from_pretrained(str(RUN / "best"))
+        checkpoint = Path(args.checkpoint) if args.checkpoint else RUN / "best"
+        processor = load_receipt_processor(checkpoint)
+        model = VisionEncoderDecoderModel.from_pretrained(str(checkpoint))
         prompt = PROMPT
-        name = f"finetuned_{args.split}"
+        name = f"finetuned_{args.split}" + (f"_{args.run_name}" if args.run_name else "")
     model.eval().to(target_device)
-    rows = read_jsonl(PREPARED / f"{args.split}.jsonl")
+    prepared_dir = Path(args.dataset_dir) if args.dataset_dir else PREPARED
+    rows = read_jsonl(prepared_dir / f"{args.split}.jsonl")
     preparation = json.loads((ML / "reports/data_preparation.json").read_text())
     fixed_ids = set(preparation["fixed_test_ids"])
     if original:
@@ -288,7 +323,9 @@ def evaluate(args) -> None:
     if args.limit:
         rows = rows[:args.limit]
     prompt_ids = processor.tokenizer(prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(target_device)
-    output = REPORTS / f"{name}.jsonl"
+    report_dir = REPORTS / args.run_name if args.run_name else REPORTS
+    report_dir.mkdir(parents=True, exist_ok=True)
+    output = report_dir / f"{name}.jsonl"
     results = read_jsonl(output) if args.resume and output.exists() else []
     completed_ids = {row["image_id"] for row in results}
     started = time.perf_counter()
@@ -331,9 +368,9 @@ def evaluate(args) -> None:
     metrics["split"] = args.split
     metrics["original_checkpoint"] = original
     metrics["device"] = str(target_device)
-    write_json(REPORTS / f"{name}_metrics.json", metrics)
+    write_json(report_dir / f"{name}_metrics.json", metrics)
     if not original and args.split == "test":
-        write_json(REPORTS / "finetuned_fixed_test_metrics.json",
+        write_json(report_dir / "finetuned_fixed_test_metrics.json",
                    score_predictions([row for row in results if row["fixed_comparison_subset"]]))
     log(json.dumps(metrics, ensure_ascii=False))
 
@@ -349,6 +386,12 @@ def main() -> None:
     parser.add_argument("--split", choices=("train", "validation", "test"), default="test")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--run-name", default="")
+    parser.add_argument("--init-checkpoint")
+    parser.add_argument("--checkpoint")
+    parser.add_argument("--dataset-dir")
+    parser.add_argument("--embedding-init", choices=("base", "transliteration"), default="base")
+    parser.add_argument("--train-encoder", action="store_true", help="Fine-tune Donut's visual encoder on live images")
     parser.add_argument("--device", choices=("auto", "cpu", "mps"), default="auto")
     args = parser.parse_args()
     log(f"Starting {args.command} on {device(args.device)}")

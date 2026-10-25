@@ -1,0 +1,29 @@
+{
+  "base_model": "naver-clova-ix/donut-base",
+  "seed": 42,
+  "epochs": 2,
+  "learning_rate": 1e-05,
+  "gradient_accumulation": 4,
+  "max_sequence_tokens": 1536,
+  "image_size": {
+    "height": 1280,
+    "width": 960
+  },
+  "encoder_frozen": true,
+  "gradient_checkpointing": true,
+  "loss_padding_multiple": 64,
+  "do_align_long_axis": false,
+  "trainable_parameters": 127735808,
+  "train_examples": 555,
+  "validation_examples": 118,
+  "excluded_overlength_train_ids": [],
+  "excluded_overlength_validation_ids": [],
+  "device": "cpu",
+  "torch": "2.14.1",
+  "transformers": "4.57.1",
+  "python": "3.13.5",
+  "created_utc": "2026-10-25T17:22:10.344904+00:00",
+  "selection": "lowest token-weighted validation cross-entropy; test never used for selection",
+  "initial_checkpoint": "ml/models/donut-receipts/best",
+  "preparation_sha256": "1572c475dd0eebdcc7e14110163061db753d4f94fcc946dd53ea468b07eaa73a"
+}

@@ -19,7 +19,7 @@ def main() -> None:
     parser.add_argument("image", type=Path)
     parser.add_argument("--checkpoint", type=Path, default=RUN / "best")
     parser.add_argument("--device", choices=("auto", "cpu", "mps"), default="auto")
-    parser.add_argument("--max-new-tokens", type=int, default=768)
+    parser.add_argument("--max-new-tokens", type=int, default=1536)
     args = parser.parse_args()
     target_device = device(args.device)
     processor = load_receipt_processor(args.checkpoint)

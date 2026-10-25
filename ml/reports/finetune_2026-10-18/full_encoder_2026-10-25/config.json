@@ -1,0 +1,36 @@
+{
+  "base_model": "naver-clova-ix/donut-base",
+  "seed": 42,
+  "epochs": 3,
+  "learning_rate": 1e-05,
+  "gradient_accumulation": 4,
+  "max_sequence_tokens": 1536,
+  "image_size": {
+    "height": 1280,
+    "width": 960
+  },
+  "encoder_frozen": false,
+  "gradient_checkpointing": true,
+  "loss_padding_multiple": 64,
+  "do_align_long_axis": false,
+  "trainable_parameters": 201916536,
+  "train_examples": 542,
+  "validation_examples": 114,
+  "prepared_dataset_dir": "ml/data/processed/receipt-ocr-ru-quantity-price",
+  "embedding_initialization": "transliteration",
+  "excluded_overlength_train_ids": [
+    "IMG_1931_bin",
+    "IMG_2044_bin"
+  ],
+  "excluded_overlength_validation_ids": [
+    "IMG_1925_bin"
+  ],
+  "device": "mps",
+  "torch": "2.14.1",
+  "transformers": "4.57.1",
+  "python": "3.13.5",
+  "created_utc": "2026-10-25T19:36:08.395500+00:00",
+  "selection": "lowest token-weighted validation cross-entropy; test never used for selection",
+  "initial_checkpoint": "ml/models/donut-receipts/full_fields_translit_2026-10-25/best",
+  "preparation_sha256": "1572c475dd0eebdcc7e14110163061db753d4f94fcc946dd53ea468b07eaa73a"
+}

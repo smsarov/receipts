@@ -1,0 +1,34 @@
+{
+  "receipts": 118,
+  "valid_json_rate": 0.864406779661017,
+  "receipt_exact_match": 0.0423728813559322,
+  "product_names_cer": 0.9674438594606211,
+  "name": {
+    "tp": 5,
+    "predicted": 205,
+    "target": 390,
+    "precision": 0.024390243902439025,
+    "recall": 0.01282051282051282,
+    "f1": 0.01680672268907563
+  },
+  "sum": {
+    "tp": 140,
+    "predicted": 205,
+    "target": 390,
+    "precision": 0.6829268292682927,
+    "recall": 0.358974358974359,
+    "f1": 0.4705882352941177
+  },
+  "pair": {
+    "tp": 5,
+    "predicted": 205,
+    "target": 390,
+    "precision": 0.024390243902439025,
+    "recall": 0.01282051282051282,
+    "f1": 0.01680672268907563
+  },
+  "generation_max_new_tokens": 768,
+  "split": "validation",
+  "original_checkpoint": false,
+  "device": "cpu"
+}

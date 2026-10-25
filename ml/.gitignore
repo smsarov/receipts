@@ -3,5 +3,6 @@
 /data/features/
 /models/donut-base/
 /models/donut-receipts/
+/models/paddleocr-cache/
 __pycache__/
 /.venv/
