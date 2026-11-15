@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "name": "1 солянка по-домашнему в горшочке",
+      "quantity": "1",
+      "price": "189.00",
+      "sum": "189.00",
+      "raw_name": "1 солянка по-донашнену в горочке",
+      "name_source": "catalog",
+      "quantity_inferred": false,
+      "sum_inferred": true,
+      "line_score": 0.979,
+      "catalog_similarity": 0.906
+    },
+    {
+      "name": "1 филе минтая запеченное с цв. капустой",
+      "quantity": "1",
+      "price": "239.00",
+      "sum": "239.00",
+      "raw_name": "1литая запеченное св капстой",
+      "name_source": "catalog",
+      "quantity_inferred": false,
+      "sum_inferred": false,
+      "line_score": 0.991,
+      "catalog_similarity": 0.873
+    },
+    {
+      "name": "1 Рулетики из Баклажан с сливочнын сыром",
+      "quantity": "1",
+      "price": "239.00",
+      "sum": "239.00",
+      "raw_name": "1 Рулетики из Баклажан с сливочнын сыром",
+      "name_source": "ocr",
+      "quantity_inferred": false,
+      "sum_inferred": false,
+      "line_score": 0.977,
+      "catalog_similarity": null
+    }
+  ]
+}

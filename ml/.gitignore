@@ -6,3 +6,14 @@
 /models/paddleocr-cache/
 __pycache__/
 /.venv/
+/models/qwen3-vl-2b-4bit/
+/models/qwen3-vl-2b-download/
+/models/ocr-lines.joblib
+/.vlm-venv/
+/models/ppocr-v6-cyrillic/
+/models/ocr-lines-original.joblib
+/models/ocr-lines-synth1.joblib
+/experiments/qwen/
+/experiments/pilots/
+/models/ocr-lines-mixed.joblib
+/models/ocr-lines-mixed100.joblib

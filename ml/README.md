@@ -80,3 +80,39 @@ ml/.venv/bin/python ml/scripts/predict_receipt.py path/to/receipt.jpg
 Данные, кеши и веса исключены из Git через `.gitignore`. Скрипты не изменяют исходную разметку и исходные веса.
 
 Подробности формирования выборок и определения метрик — в [протоколе](reports/finetune_2026-10-18/protocol.md).
+
+## Экспериментальный OCR-разборщик
+
+Установите `ml/.venv/bin/pip install -r ml/requirements-ocr.txt`, затем запустите `ml/.venv/bin/python ml/scripts/ocr_receipt.py path/to/receipt.jpg`. Первый запуск PaddleOCR может загрузить веса. Результат содержит `items`, неизвестные поля равны `null`; данные требуют ручной проверки. Оценка на сохранённых OCR-результатах validation: `ml/.venv/bin/python ml/scripts/ocr_receipt.py --evaluate`. Метрики и предсказания находятся в `reports/ocr_parser_validation_2026-11-01.*`. Совпадения отдельных полей считаются независимо внутри чека и не гарантируют правильную привязку к строке; `full_row` проверяет весь кортеж. Качество пока ниже порогов для автоматического использования.
+
+## Специализированный OCR с классификатором строк
+
+Экспериментальный вариант для ручной проверки использует детектор PP-OCRv5, компактный кириллический распознаватель [PP-OCRv6 Medium](https://huggingface.co/metrika-labs/PP-OCRv6_medium_rec_cyrillic_onnx) и классификатор товарных строк, обученный на train. Всё выполняется локально на CPU; LLM не используется. Для интеграции `ReceiptPredictor` загружает модели один раз и вызывается с путём изображения:
+
+```python
+import sys
+sys.path.insert(0, "ml/scripts")
+from receipt_predictor import ReceiptPredictor
+predict_receipt = ReceiptPredictor()
+result = predict_receipt("receipt.jpg")
+```
+
+Командная строка печатает JSON в stdout, диагностику — в stderr:
+
+```bash
+ml/.venv/bin/python ml/scripts/receipt_predictor.py path/to/receipt.jpg
+```
+
+Каждая позиция содержит `name`, `quantity`, `price`, `sum`, а также `raw_name`, `name_source`, `line_score`, `catalog_similarity` и признаки `quantity_inferred`, `sum_inferred`. Оценки похожести и классификатора не являются калиброванной вероятностью правильности. Название из каталога может относиться к другому товару, значение `1` и сумма могут быть предположены; результат необходимо показывать для проверки и исправления.
+
+Для воспроизведения требуется установить `ml/requirements.txt` и `ml/requirements-ocr.txt`, загрузить веса PP-OCRv6 в `ml/models/ppocr-v6-cyrillic/`, а детектор PP-OCRv5 — в кеш `ml/models/paddleocr-cache/official_models/PP-OCRv5_mobile_det/`. Загрузить кириллические веса можно командой `ml/.venv/bin/hf download metrika-labs/PP-OCRv6_medium_rec_cyrillic_onnx --local-dir ml/models/ppocr-v6-cyrillic`. Классификатор создаётся командой `ml/.venv/bin/python ml/scripts/train_ocr_lines.py` из подготовленного train и `ml/reports/paddleocr_train.jsonl`. Веса и данные не включены в Git. Команды первоначальной подготовки train OCR и оценки:
+
+```bash
+PADDLE_PDX_CACHE_HOME=ml/models/paddleocr-cache ml/.venv/bin/python ml/scripts/run_paddle_ocr.py --split train --output ml/reports/paddleocr_train.jsonl
+ml/.venv/bin/python ml/scripts/train_ocr_lines.py
+ml/.venv/bin/python ml/scripts/rerecognize_v6.py --output ml/reports/ppocr_v6_validation.jsonl
+ml/.venv/bin/python ml/scripts/ocr_learned.py --evaluate --ocr ml/reports/ppocr_v6_validation.jsonl --output ml/reports/ocr_v6_metrics.json
+ml/.venv/bin/python ml/scripts/evaluate_item_fuzzy.py ml/reports/ocr_v6_metrics.jsonl
+```
+
+Оценка отдельных числовых полей допускает совпадение с другой позицией того же чека. Метрика `full_row` требует совпадения всех полей одной позиции; дополнительная оценка по похожести названия связывает числа с той же строкой. Эти результаты нельзя трактовать как гарантию для новых магазинов или качества фотографий.

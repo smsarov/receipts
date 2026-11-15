@@ -1,0 +1,40 @@
+{
+  "receipts": 115,
+  "train_ocr_receipts": 544,
+  "gold_items": 379,
+  "predicted_items": 342,
+  "threshold": 0.4,
+  "catalog_threshold": 60,
+  "fields": {
+    "name": {
+      "matches": 126,
+      "precision": 0.3684210526315789,
+      "recall": 0.3324538258575198,
+      "f1": 0.3495145631067961
+    },
+    "quantity": {
+      "matches": 233,
+      "precision": 0.6812865497076024,
+      "recall": 0.6147757255936676,
+      "f1": 0.6463245492371706
+    },
+    "price": {
+      "matches": 247,
+      "precision": 0.7222222222222222,
+      "recall": 0.6517150395778364,
+      "f1": 0.6851595006934812
+    },
+    "sum": {
+      "matches": 253,
+      "precision": 0.7397660818713451,
+      "recall": 0.6675461741424802,
+      "f1": 0.7018030513176144
+    },
+    "full_row": {
+      "matches": 91,
+      "precision": 0.26608187134502925,
+      "recall": 0.24010554089709762,
+      "f1": 0.25242718446601947
+    }
+  }
+}
